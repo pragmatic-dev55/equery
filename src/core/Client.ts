@@ -24,6 +24,31 @@ export class EqueryClient {
     this.config = config;
   }
 
+  /**
+   * Replace the client's configuration entirely.
+   * Useful when you want to reset headers/baseUrl/etc. to a new set.
+   */
+  setConfig(config: QueryConfig) {
+    this.config = config || {};
+  }
+
+  /**
+   * Merge provided partial configuration into the existing client config.
+   * Headers are merged shallowly so callers can add/remove headers.
+   */
+  updateConfig(partial: Partial<QueryConfig>) {
+    const mergedHeaders = {
+      ...(this.config.headers || {}),
+      ...(partial.headers || {}),
+    };
+
+    this.config = {
+      ...this.config,
+      ...partial,
+      headers: mergedHeaders,
+    } as QueryConfig;
+  }
+
   useFetch<TData = any, TError = any>(
     endpoint: string,
     config?: QueryConfig
