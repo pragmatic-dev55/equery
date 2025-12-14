@@ -5,6 +5,17 @@ import {
   QueryObserver,
 } from "./Query";
 
+/**
+ * `EqueryClient` provides a client-scoped way to call `useFetch` with shared
+ * configuration and deduplication across the client instance.
+ *
+ * Typical usage:
+ * ```ts
+ * const client = new EqueryClient({ baseUrl: 'https://api' });
+ * const q = client.useFetch('/path');
+ * q.onComplete(result => ...);
+ * ```
+ */
 export class EqueryClient {
   private config: QueryConfig;
   private activeQueries = new Map<string, ActiveQuery<any, any>>();
@@ -32,6 +43,11 @@ export class EqueryClient {
       | FetcherDefinition<TData, TError>,
     config: QueryConfig = {}
   ): Query<TData, TError> {
+    /**
+     * Client-scoped `useFetch`. Merges client config with call config and
+     * performs deduplication by generating a cache key. Returns a `Query`
+     * (observer) that can be used to attach callbacks or await results.
+     */
     // Unwrap FetcherDefinition to extract key
     let actualEndpoint: string | Fetcher<TData>;
     let definitionKey: string | undefined;

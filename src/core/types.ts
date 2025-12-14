@@ -1,3 +1,12 @@
+/**
+ * Configuration for a query/request.
+ *
+ * - `enabled`: when false, the query will not auto-execute until `execute()` is called.
+ * - `baseUrl`: optional base URL to prefix string endpoints.
+ * - `queryKey`: optional explicit cache/deduplication key.
+ * - `method`, `headers`, `body`: request options when using string endpoints.
+ * - `timeout`: optional timeout in milliseconds to abort the request.
+ */
 export interface QueryConfig {
   enabled?: boolean;
   baseUrl?: string;
@@ -10,6 +19,11 @@ export interface QueryConfig {
   timeout?: number;
 }
 
+/**
+ * Result state returned by queries and observers.
+ *
+ * `data` and `error` are mutually exclusive in normal success/error flows.
+ */
 export interface QueryResult<TData, TError> {
   data: TData | null;
   error: TError | null;
@@ -19,6 +33,11 @@ export interface QueryResult<TData, TError> {
   isLoading: boolean;
 }
 
+/**
+ * Minimal chainable API returned by queries/observers.
+ *
+ * Supports attaching lifecycle callbacks, cancellation and Promise compatibility.
+ */
 export interface ExecutionChain<TData, TError> {
   onComplete(
     callback: (result: QueryResult<TData, TError>) => void
@@ -40,17 +59,34 @@ export interface ExecutionChain<TData, TError> {
   finally(onfinally?: (() => void) | null): Promise<TData>;
 }
 
+/** Context passed to fetcher functions. */
 export type FetchContext = { signal: AbortSignal };
+
+/**
+ * A fetcher function which may use the provided `signal` for cancellation.
+ * Can return either a value synchronously or a Promise resolving to the value.
+ */
 export type Fetcher<TData, TError = any> = (
   context: FetchContext
 ) => Promise<TData> | TData;
 
+/**
+ * Small wrapper used by adapters to provide both a stable cache key and the
+ * fetcher function to execute.
+ */
 export type FetcherDefinition<TData, TError = any> = {
   key: string;
   fn: Fetcher<TData, TError>;
 };
 
+/**
+ * Public-facing Query interface returned by `useFetch` and `EqueryClient.useFetch`.
+ *
+ * It extends `ExecutionChain` for chaining, and exposes helpers useful for
+ * testing and deduplication.
+ */
 export interface Query<TData, TError> extends ExecutionChain<TData, TError> {
+  /** Ensure the query is executed. Useful when `enabled: false` was provided. */
   execute(): Query<TData, TError>;
   /** Returns a unique identifier for the underlying query. Used for testing deduplication. */
   getQueryId(): symbol;

@@ -17,6 +17,14 @@ function isAbortError(err: unknown): boolean {
   );
 }
 
+/**
+ * Internal representation of a running query.
+ *
+ * - Manages a single execution, its AbortController, and callback lists.
+ * - Keeps a reference count so multiple observers can share the same underlying
+ *   execution (used for deduplication).
+ * - Exposes minimal helpers used by `QueryObserver` and `EqueryClient`.
+ */
 class ActiveQuery<TData, TError> {
   public resultState: QueryResult<TData, TError>;
   private completeCallbacks: ((result: QueryResult<TData, TError>) => void)[] =
@@ -208,6 +216,15 @@ class ActiveQuery<TData, TError> {
   }
 }
 
+/**
+ * Observer wrapper returned to callers.
+ *
+ * - Wraps an `ActiveQuery` and provides the chainable API (`onComplete`,
+ *   `onError`, `then`, `catch`, `finally`, `cancel`).
+ * - Each observer maintains its own callback lists and can cancel itself
+ *   without necessarily aborting the underlying `ActiveQuery` until all
+ *   observers are removed.
+ */
 export class QueryObserver<TData, TError> implements Query<TData, TError> {
   private isObserverCanceled = false;
   private wrappedCompleteCallbacks: ((
@@ -387,6 +404,13 @@ export class QueryObserver<TData, TError> implements Query<TData, TError> {
 // Export ActiveQuery for use in Client
 export { ActiveQuery };
 
+/**
+ * Convenience helper to create a `Query` from an endpoint.
+ *
+ * Accepts a string endpoint (which will use `fetch`), a `Fetcher` function,
+ * or a `FetcherDefinition` (providing a key + fn). Returns a `QueryObserver`
+ * that implements the chainable `Query` API.
+ */
 export function useFetch<TData = any, TError = any>(
   endpoint: string,
   config?: QueryConfig

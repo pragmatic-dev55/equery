@@ -62,6 +62,14 @@ const serializeInput = (input: any): string => {
   return stableStringify(input);
 };
 
+/**
+ * Create a tRPC-style fetcher adapter from a tRPC router or caller object.
+ *
+ * The returned proxy will mirror the shape of the router and convert calls
+ * into `FetcherDefinition` objects `{ key, fn }` where `key` is a stable
+ * string suitable for deduplication and `fn` is a fetcher that invokes the
+ * original tRPC method.
+ */
 export function createTrpcFetcher<
   TRouter extends Record<string, any>,
   TError = InferTrpcAdapterError<TRouter>
@@ -108,6 +116,11 @@ function createRecursiveProxy<TTarget extends object, TError>(
 
 // Mapped type to transform router/caller:
 // Functions returning Promise<T> become Functions returning FetcherDefinition<T>
+/**
+ * Type-level mapping from a tRPC router/caller to an adapter shape suitable
+ * for `useFetch`. Methods that return `Promise<T>` become functions returning
+ * `FetcherDefinition<T>`; nested objects are mapped recursively.
+ */
 export type TrpcAdapter<T, TError = unknown> = {
   [K in keyof T]: T[K] extends (...args: infer Args) => Promise<infer R>
     ? (...args: Args) => FetcherDefinition<R, TError>
@@ -117,6 +130,11 @@ export type TrpcAdapter<T, TError = unknown> = {
 };
 
 // Cleaner export that uses the recursive one from start
+/**
+ * Helper wrapper identical to `createTrpcFetcher` kept as a clearer name for
+ * tRPC adapters. It returns a proxied object where each call produces a
+ * `FetcherDefinition` that can be passed to `useFetch`.
+ */
 export function createTrpcAdapter<
   TCaller extends object,
   TError = InferTrpcAdapterError<TCaller>
