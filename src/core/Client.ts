@@ -24,6 +24,11 @@ export class EqueryClient {
     this.config = config;
   }
 
+  /** Return a shallow copy of current client config for inspection. */
+  getConfig(): QueryConfig {
+    return { ...(this.config || {}) };
+  }
+
   /**
    * Replace the client's configuration entirely.
    * Useful when you want to reset headers/baseUrl/etc. to a new set.
@@ -47,6 +52,22 @@ export class EqueryClient {
       ...partial,
       headers: mergedHeaders,
     } as QueryConfig;
+  }
+
+  private buildUrl(baseUrl: string | undefined, endpoint: string): string {
+    if (!baseUrl) return endpoint;
+    const base = baseUrl.replace(/\/$/, "");
+    const path = endpoint.replace(/^\//, "");
+    return `${base}/${path}`;
+  }
+
+  private makeCacheKey(
+    method: string,
+    endpoint: string,
+    body?: unknown
+  ): string {
+    const bodyStr = body ? JSON.stringify(body) : "";
+    return `${method}:${endpoint}${bodyStr ? `:${bodyStr}` : ""}`;
   }
 
   useFetch<TData = any, TError = any>(
@@ -86,8 +107,8 @@ export class EqueryClient {
 
     // Merge configs
     const mergedHeaders = {
-      ...this.config.headers,
-      ...config.headers,
+      ...(this.config.headers || {}),
+      ...(config.headers || {}),
     };
 
     const mergedConfig: QueryConfig = {
@@ -98,10 +119,7 @@ export class EqueryClient {
 
     let finalEndpoint = actualEndpoint;
     if (typeof actualEndpoint === "string" && mergedConfig.baseUrl) {
-      // Avoid double slashes if both have them, or missing slash
-      const base = mergedConfig.baseUrl.replace(/\/$/, "");
-      const path = actualEndpoint.replace(/^\//, "");
-      finalEndpoint = `${base}/${path}`;
+      finalEndpoint = this.buildUrl(mergedConfig.baseUrl, actualEndpoint);
     }
 
     // Deduplication Logic
@@ -113,10 +131,7 @@ export class EqueryClient {
     } else if (typeof finalEndpoint === "string") {
       // Include method and body in key to differentiate requests
       const method = mergedConfig.method || "GET";
-      const bodyStr = mergedConfig.body
-        ? JSON.stringify(mergedConfig.body)
-        : "";
-      cacheKey = `${method}:${finalEndpoint}${bodyStr ? `:${bodyStr}` : ""}`;
+      cacheKey = this.makeCacheKey(method, finalEndpoint, mergedConfig.body);
     }
 
     // Always check cache for running queries (regardless of enabled status)

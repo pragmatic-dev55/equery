@@ -15,6 +15,10 @@ export interface QueryConfig {
   method?: string;
   headers?: Record<string, string>;
   body?: unknown;
+  /** Optional fetch implementation to use instead of the global `fetch`.
+   * Useful for Node environments, testing, or custom request logic.
+   */
+  fetch?: (input: RequestInfo, init?: RequestInit) => Promise<Response>;
   /** Timeout in milliseconds before the request is aborted (similar to axios). */
   timeout?: number;
 }

@@ -108,7 +108,9 @@ class ActiveQuery<TData, TError> {
             headers["Content-Type"] = "application/json";
           }
 
-          const response = await fetch(this.endpoint, {
+          const fetchImpl =
+            (this.config && this.config.fetch) || (globalThis as any).fetch;
+          const response = await fetchImpl(this.endpoint, {
             method: this.config.method || "GET",
             headers,
             body: this.config.body
