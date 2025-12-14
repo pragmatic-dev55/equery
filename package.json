@@ -1,0 +1,31 @@
+{
+    "name": "equery",
+    "version": "1.0.0",
+    "description": "A simple, developer-friendly data fetching library",
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "tsc",
+        "start": "ts-node src/index.ts",
+        "test": "jest",
+        "demo": "ts-node src/demo.ts"
+    },
+    "keywords": [
+        "fetch",
+        "query",
+        "typescript",
+        "async"
+    ],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "@trpc/client": "^11.8.0",
+        "@trpc/server": "^11.8.0",
+        "@types/jest": "^30.0.0",
+        "@types/node": "^20.0.0",
+        "jest": "^30.2.0",
+        "ts-jest": "^29.4.6",
+        "ts-node": "^10.9.1",
+        "typescript": "^5.0.0",
+        "zod": "^4.1.13"
+    }
+}
