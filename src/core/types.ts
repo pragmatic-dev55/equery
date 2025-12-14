@@ -6,6 +6,8 @@ export interface QueryConfig {
   method?: string;
   headers?: Record<string, string>;
   body?: unknown;
+  /** Timeout in milliseconds before the request is aborted (similar to axios). */
+  timeout?: number;
 }
 
 export interface QueryResult<TData, TError> {

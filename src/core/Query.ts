@@ -65,6 +65,20 @@ class ActiveQuery<TData, TError> {
     this.abortController = new AbortController();
     const signal = this.abortController.signal;
 
+    const timeoutMs = this.config.timeout;
+    const hasTimeout = typeof timeoutMs === "number" && timeoutMs > 0;
+    let didTimeout = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let timeoutError: Error | null = null;
+
+    if (hasTimeout) {
+      timeoutError = new Error(`timeout of ${timeoutMs}ms exceeded`);
+      timeoutId = setTimeout(() => {
+        didTimeout = true;
+        this.abortController?.abort();
+      }, timeoutMs);
+    }
+
     this.resultState = {
       ...this.resultState,
       isLoading: true,
@@ -101,7 +115,14 @@ class ActiveQuery<TData, TError> {
           data = await response.json();
         }
 
-        if (signal.aborted) throw new Error("Aborted");
+        if (timeoutId) clearTimeout(timeoutId);
+
+        if (signal.aborted) {
+          if (didTimeout && timeoutError) {
+            throw timeoutError;
+          }
+          throw new Error("Aborted");
+        }
 
         this.resultState = {
           ...this.resultState,
@@ -113,9 +134,14 @@ class ActiveQuery<TData, TError> {
         this.notifyComplete();
         return this.resultState;
       } catch (err: unknown) {
+        if (timeoutId) clearTimeout(timeoutId);
         this.resultState = { ...this.resultState, isLoading: false };
 
-        if (isAbortError(err) || signal.aborted) {
+        if (didTimeout && timeoutError) {
+          this.resultState.isError = true;
+          this.resultState.error = timeoutError as TError;
+          this.notifyError(timeoutError as TError);
+        } else if (isAbortError(err) || signal.aborted) {
           this.resultState.isCanceled = true;
         } else {
           this.resultState.isError = true;
