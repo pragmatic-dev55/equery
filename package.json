@@ -1,5 +1,5 @@
 {
-  "name": "equery",
+  "name": "equery-js",
   "version": "0.0.3",
   "description": "A simple, developer-friendly data fetching library",
   "main": "dist/index.js",
